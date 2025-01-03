@@ -23,14 +23,14 @@ defmodule IPTest.RangeEnumerableTest do
   describe "reduce-based list generation" do
     test "works with ipv4 ranges" do
       assert [{10, 0, 0, 3}, {10, 0, 0, 4}, {10, 0, 0, 5}] ==
-        Enum.to_list(~i"10.0.0.3..10.0.0.5")
+               Enum.to_list(~i"10.0.0.3..10.0.0.5")
     end
   end
 
   describe "slice-based list generation" do
     test "works with subnets" do
       assert [{10, 0, 0, 3}, {10, 0, 0, 4}, {10, 0, 0, 5}] ==
-        Enum.slice(~i"10.0.0.3..10.0.0.5", 0..4)
+               Enum.slice(~i"10.0.0.3..10.0.0.5", 0..4)
     end
   end
 end

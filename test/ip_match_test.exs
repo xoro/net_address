@@ -21,6 +21,7 @@ defmodule IPTest.IPMatchTest do
   test "ip address matches can pin values" do
     v = 10
     ~i"192.168.^v._x"m = {192, 168, 10, 32}
+
     assert_raise MatchError, fn ->
       ~i"192.168.^v._x"m = {192, 168, 9, 32}
     end
@@ -37,31 +38,31 @@ defmodule IPTest.IPMatchTest do
   describe "sigil_i" do
     test "raises on invalid ip forms" do
       assert_raise SyntaxError,
-        "nofile:2: invalid ip match 10.1.1.1.1",
-        fn ->
-          Code.compile_string("""
-          import IP
-          ~i"10.1.1.1.1"m = {10, 1, 1, 1}
-          """)
-        end
+                   "nofile:2: invalid ip match 10.1.1.1.1",
+                   fn ->
+                     Code.compile_string("""
+                     import IP
+                     ~i"10.1.1.1.1"m = {10, 1, 1, 1}
+                     """)
+                   end
 
       assert_raise SyntaxError,
-        "nofile:2: 1000 is out of the range for ipv4 addresses",
-        fn ->
-          Code.compile_string("""
-          import IP
-          ~i"10.1000.3.1"m = {10, 1, 1, 1}
-          """)
-        end
+                   "nofile:2: 1000 is out of the range for ipv4 addresses",
+                   fn ->
+                     Code.compile_string("""
+                     import IP
+                     ~i"10.1000.3.1"m = {10, 1, 1, 1}
+                     """)
+                   end
 
       assert_raise SyntaxError,
-        "nofile:2: ~s/10.1.1.1/m must be used inside of a match",
-        fn ->
-          Code.compile_string("""
-          import IP
-          ~i"10.1.1.1"m
-          """)
-        end
+                   "nofile:2: ~s/10.1.1.1/m must be used inside of a match",
+                   fn ->
+                     Code.compile_string("""
+                     import IP
+                     ~i"10.1.1.1"m
+                     """)
+                   end
     end
   end
 end

@@ -11,7 +11,7 @@ defmodule Mac do
   #############################################################################
   ## GUARDS
 
-  @spec is_mac(any) :: Macro.t
+  @spec is_mac(any) :: Macro.t()
   @doc """
   checks to see if a value is a mac address.
 
@@ -28,16 +28,17 @@ defmodule Mac do
   false
   ```
   """
-  defguard is_mac(mac_addr) when is_tuple(mac_addr) and
-    (tuple_size(mac_addr) == 6) and
-    (IP.is_byte(elem(mac_addr, 0))) and
-    (IP.is_byte(elem(mac_addr, 1))) and
-    (IP.is_byte(elem(mac_addr, 2))) and
-    (IP.is_byte(elem(mac_addr, 3))) and
-    (IP.is_byte(elem(mac_addr, 4))) and
-    (IP.is_byte(elem(mac_addr, 5)))
+  defguard is_mac(mac_addr)
+           when is_tuple(mac_addr) and
+                  tuple_size(mac_addr) == 6 and
+                  IP.is_byte(elem(mac_addr, 0)) and
+                  IP.is_byte(elem(mac_addr, 1)) and
+                  IP.is_byte(elem(mac_addr, 2)) and
+                  IP.is_byte(elem(mac_addr, 3)) and
+                  IP.is_byte(elem(mac_addr, 4)) and
+                  IP.is_byte(elem(mac_addr, 5))
 
-  @spec is_local_mac(any) :: Macro.t
+  @spec is_local_mac(any) :: Macro.t()
   @doc """
   checks to see if a value is a local mac address, by convention
   it means it has been assigned by a VM system.
@@ -51,10 +52,11 @@ defmodule Mac do
   false
   ```
   """
-  defguard is_local_mac(mac_addr) when is_mac(mac_addr) and
-    ((elem(mac_addr, 0) - div(elem(mac_addr, 0), 4) * 4) in [2, 3])
+  defguard is_local_mac(mac_addr)
+           when is_mac(mac_addr) and
+                  (elem(mac_addr, 0) - div(elem(mac_addr, 0), 4) * 4) in [2, 3]
 
-  @spec is_universal_mac(any) :: Macro.t
+  @spec is_universal_mac(any) :: Macro.t()
   @doc """
   checks to see if a value is a local mac address, by convention
   it means it has been assigned by the hardware manufacturer
@@ -68,13 +70,14 @@ defmodule Mac do
   true
   ```
   """
-  defguard is_universal_mac(mac_addr) when is_mac(mac_addr) and
-  ((elem(mac_addr, 0) - div(elem(mac_addr, 0), 4) * 4) in [0, 1])
+  defguard is_universal_mac(mac_addr)
+           when is_mac(mac_addr) and
+                  (elem(mac_addr, 0) - div(elem(mac_addr, 0), 4) * 4) in [0, 1]
 
   #############################################################################
   ## API
 
-  @spec to_string(t) :: String.t
+  @spec to_string(t) :: String.t()
   @doc """
   Converts a mac address to a string
 
@@ -88,7 +91,7 @@ defmodule Mac do
   """
   def to_string(mac_addr) do
     mac_addr
-    |> Tuple.to_list
+    |> Tuple.to_list()
     |> Enum.map(fn val ->
       case Integer.to_string(val, 16) do
         <<a>> -> <<"0", a>>
@@ -98,19 +101,21 @@ defmodule Mac do
     |> Enum.join(":")
   end
 
-
-  @spec from_string!(String.t) :: t
+  @spec from_string!(String.t()) :: t
   def from_string!(mac_string) do
     case from_string(mac_string) do
-      {:ok, mac} -> mac
+      {:ok, mac} ->
+        mac
+
       {:error, :einval} when is_binary(mac_string) ->
         raise ArgumentError, "malformed mac address string #{mac_string}"
+
       {:error, :einval} ->
-        raise ArgumentError, "#{inspect mac_string} is not a string"
+        raise ArgumentError, "#{inspect(mac_string)} is not a string"
     end
   end
 
-  @spec from_string(String.t) :: {:ok, t} | {:error, term}
+  @spec from_string(String.t()) :: {:ok, t} | {:error, term}
   @doc """
   converts a mac address string and turns it into a proper
   mac address datatype.  Supports standard colon format,
@@ -130,36 +135,34 @@ defmodule Mac do
   {0x06, 0xAA, 0x07, 0xFB, 0xB6, 0x1E}
   ```
   """
-  def from_string(<<a::binary-size(2), ?:,
-                    b::binary-size(2), ?:,
-                    c::binary-size(2), ?:,
-                    d::binary-size(2), ?:,
-                    e::binary-size(2), ?:,
-                    f::binary-size(2)>>) do
+  def from_string(
+        <<a::binary-size(2), ?:, b::binary-size(2), ?:, c::binary-size(2), ?:, d::binary-size(2),
+          ?:, e::binary-size(2), ?:, f::binary-size(2)>>
+      ) do
     from_list([a, b, c, d, e, f])
   end
-  def from_string(<<a::binary-size(2), ?-,
-                    b::binary-size(2), ?-,
-                    c::binary-size(2), ?-,
-                    d::binary-size(2), ?-,
-                    e::binary-size(2), ?-,
-                    f::binary-size(2)>>) do
+
+  def from_string(
+        <<a::binary-size(2), ?-, b::binary-size(2), ?-, c::binary-size(2), ?-, d::binary-size(2),
+          ?-, e::binary-size(2), ?-, f::binary-size(2)>>
+      ) do
     from_list([a, b, c, d, e, f])
   end
-  def from_string(<<a::binary-size(2),
-                    b::binary-size(2), ?.,
-                    c::binary-size(2),
-                    d::binary-size(2), ?.,
-                    e::binary-size(2),
-                    f::binary-size(2)>>) do
+
+  def from_string(
+        <<a::binary-size(2), b::binary-size(2), ?., c::binary-size(2), d::binary-size(2), ?.,
+          e::binary-size(2), f::binary-size(2)>>
+      ) do
     from_list([a, b, c, d, e, f])
   end
+
   def from_string(_), do: {:error, :einval}
 
   defp from_list(list) do
-    {:ok, list
-    |> Enum.map(&String.to_integer(&1, 16))
-    |> List.to_tuple}
+    {:ok,
+     list
+     |> Enum.map(&String.to_integer(&1, 16))
+     |> List.to_tuple()}
   rescue
     _ -> {:error, :einval}
   end
@@ -190,9 +193,10 @@ defmodule Mac do
   def mask(bits, mode \\ :mac) when is_integer(bits) and 0 <= bits and bits <= 48 do
     import Bitwise
     int_val = @top_val - (@top_val >>> bits)
+
     case mode do
       :integer -> int_val
-      :binary -> <<int_val :: 48>>
+      :binary -> <<int_val::48>>
       :mac -> from_integer(int_val)
     end
   end
@@ -204,18 +208,20 @@ defmodule Mac do
   generates a random mac address from another, with a mask value
   """
   def random(src \\ nil, bits \\ 48)
+
   def random(nil, 48) do
     0..0xFFFF_FFFF_FFFF
-    |> Enum.random
+    |> Enum.random()
     |> from_integer
   end
-  def random(src, bits) when is_mac(src) and
-      is_integer(bits) and 0 <= bits and bits <= 48 do
 
+  def random(src, bits)
+      when is_mac(src) and
+             is_integer(bits) and 0 <= bits and bits <= 48 do
     import Bitwise
     mask = mask(bits, :integer)
     <<rbits::unsigned-integer-size(48)>> = :crypto.strong_rand_bytes(6)
-    rval = rbits &&& (~~~mask)
+    rval = rbits &&& ~~~mask
 
     src
     |> to_integer
@@ -224,7 +230,7 @@ defmodule Mac do
     |> from_integer
   end
 
-  @spec sigil_m(Macro.t, [byte]) :: Macro.t
+  @spec sigil_m(Macro.t(), [byte]) :: Macro.t()
   @doc """
   allows you to use the convenient ~m sigil to declare a Mac address
   in its normal string form, instead of using the tuple form.
@@ -262,5 +268,4 @@ defmodule Mac do
     <<a, b, c, d, e, f>> = <<i::unsigned-integer-size(48)>>
     {a, b, c, d, e, f}
   end
-
 end

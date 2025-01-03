@@ -23,14 +23,14 @@ defmodule IPTest.SubnetEnumerableTest do
   describe "reduce-based list generation" do
     test "works with subnets" do
       assert [{10, 0, 0, 0}, {10, 0, 0, 1}] ==
-        Enum.to_list(~i"10.0.0.0/31")
+               Enum.to_list(~i"10.0.0.0/31")
     end
   end
 
   describe "slice-based list generation" do
     test "works with subnets" do
       assert [{10, 0, 0, 0}, {10, 0, 0, 1}] ==
-        Enum.slice(~i"10.0.0.0/31", 0..2)
+               Enum.slice(~i"10.0.0.0/31", 0..2)
     end
   end
 end

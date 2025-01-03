@@ -53,14 +53,14 @@ defmodule IP.Subnet do
 
   @typedoc "ip subnet typed to ipv4 or ipv6"
   @type t(ip_type) :: %__MODULE__{
-    routing_prefix: ip_type,
-    bit_length: 0..128
-  }
+          routing_prefix: ip_type,
+          bit_length: 0..128
+        }
 
   @typedoc "generic ip subnet"
-  @type t :: t(IP.v4) | t(IP.v6)
+  @type t :: t(IP.v4()) | t(IP.v6())
 
-  @spec is_subnet(any) :: Macro.t
+  @spec is_subnet(any) :: Macro.t()
   @doc """
   true if the term is a subnet struct, and it's valid.
 
@@ -76,14 +76,15 @@ defmodule IP.Subnet do
   false
   ```
   """
-  defguard is_subnet(subnet) when is_struct(subnet) and
-    :erlang.map_get(:__struct__, subnet) == __MODULE__ and
-    ((IP.is_ipv4(:erlang.map_get(:routing_prefix, subnet)) and
-      :erlang.map_get(:bit_length, subnet) <= 32 and
-      :erlang.map_get(:bit_length, subnet) >= 0) or
-     (IP.is_ipv6(:erlang.map_get(:routing_prefix, subnet)) and
-      :erlang.map_get(:bit_length, subnet) <= 128 and
-      :erlang.map_get(:bit_length, subnet) >= 0))
+  defguard is_subnet(subnet)
+           when is_struct(subnet) and
+                  :erlang.map_get(:__struct__, subnet) == __MODULE__ and
+                  ((IP.is_ipv4(:erlang.map_get(:routing_prefix, subnet)) and
+                      :erlang.map_get(:bit_length, subnet) <= 32 and
+                      :erlang.map_get(:bit_length, subnet) >= 0) or
+                     (IP.is_ipv6(:erlang.map_get(:routing_prefix, subnet)) and
+                        :erlang.map_get(:bit_length, subnet) <= 128 and
+                        :erlang.map_get(:bit_length, subnet) >= 0))
 
   import Bitwise, only: [<<<: 2]
 
@@ -106,22 +107,32 @@ defmodule IP.Subnet do
   false
   ```
   """
-  defguard is_in(subnet, ip) when ip >= :erlang.map_get(:routing_prefix, subnet) and IP.is_ipv4(ip)
-    and ((:erlang.map_get(:bit_length, subnet) == 32 and ip == :erlang.map_get(:routing_prefix, subnet))
-      or (:erlang.map_get(:bit_length, subnet) < 32 and :erlang.map_get(:bit_length, subnet) >= 24
-        and IP.octet_13(ip) == IP.octet_13(:erlang.map_get(:routing_prefix, subnet))
-        and IP.octet_4(ip) - IP.octet_4(:erlang.map_get(:routing_prefix, subnet)) < (1 <<< (32 - :erlang.map_get(:bit_length, subnet))))
-      or (:erlang.map_get(:bit_length, subnet) < 24 and :erlang.map_get(:bit_length, subnet) >= 16
-        and IP.octet_12(ip) == IP.octet_12(:erlang.map_get(:routing_prefix, subnet))
-        and IP.octet_34(ip) - IP.octet_34(:erlang.map_get(:routing_prefix, subnet)) < (1 <<< 32 - :erlang.map_get(:bit_length, subnet)))
-      or (:erlang.map_get(:bit_length, subnet) < 16 and :erlang.map_get(:bit_length, subnet) >= 8
-        and IP.octet_1(ip) == IP.octet_1(:erlang.map_get(:routing_prefix, subnet))
-        and IP.octet_24(ip) - IP.octet_24(:erlang.map_get(:routing_prefix, subnet)) < (1 <<< 32 - :erlang.map_get(:bit_length, subnet)))
-      or (:erlang.map_get(:bit_length, subnet) < 8 and :erlang.map_get(:bit_length, subnet) >= 0
-        and IP.octet_14(ip) - IP.octet_14(:erlang.map_get(:routing_prefix, subnet)) < (1 <<< 32 - :erlang.map_get(:bit_length, subnet))))
+  defguard is_in(subnet, ip)
+           when ip >= :erlang.map_get(:routing_prefix, subnet) and IP.is_ipv4(ip) and
+                  ((:erlang.map_get(:bit_length, subnet) == 32 and
+                      ip == :erlang.map_get(:routing_prefix, subnet)) or
+                     (:erlang.map_get(:bit_length, subnet) < 32 and
+                        :erlang.map_get(:bit_length, subnet) >= 24 and
+                        IP.octet_13(ip) == IP.octet_13(:erlang.map_get(:routing_prefix, subnet)) and
+                        IP.octet_4(ip) - IP.octet_4(:erlang.map_get(:routing_prefix, subnet)) <
+                          1 <<< (32 - :erlang.map_get(:bit_length, subnet))) or
+                     (:erlang.map_get(:bit_length, subnet) < 24 and
+                        :erlang.map_get(:bit_length, subnet) >= 16 and
+                        IP.octet_12(ip) == IP.octet_12(:erlang.map_get(:routing_prefix, subnet)) and
+                        IP.octet_34(ip) - IP.octet_34(:erlang.map_get(:routing_prefix, subnet)) <
+                          1 <<< (32 - :erlang.map_get(:bit_length, subnet))) or
+                     (:erlang.map_get(:bit_length, subnet) < 16 and
+                        :erlang.map_get(:bit_length, subnet) >= 8 and
+                        IP.octet_1(ip) == IP.octet_1(:erlang.map_get(:routing_prefix, subnet)) and
+                        IP.octet_24(ip) - IP.octet_24(:erlang.map_get(:routing_prefix, subnet)) <
+                          1 <<< (32 - :erlang.map_get(:bit_length, subnet))) or
+                     (:erlang.map_get(:bit_length, subnet) < 8 and
+                        :erlang.map_get(:bit_length, subnet) >= 0 and
+                        IP.octet_14(ip) - IP.octet_14(:erlang.map_get(:routing_prefix, subnet)) <
+                          1 <<< (32 - :erlang.map_get(:bit_length, subnet))))
 
-  @spec new(IP.v4, 0..32) :: t(IP.v4)
-  @spec new(IP.v6, 0..128) :: t(IP.v6)
+  @spec new(IP.v4(), 0..32) :: t(IP.v4())
+  @spec new(IP.v6(), 0..128) :: t(IP.v6())
   @doc """
   creates a new IP Subnet struct from a routing prefix and bit length.
 
@@ -130,11 +141,11 @@ defmodule IP.Subnet do
   subnet for a given ip address, use `of/2`
   """
   def new(routing_prefix, bit_length)
-    when IP.is_ipv4(routing_prefix) and
-         0 <= bit_length and bit_length <= 32 do
-
-    unless routing_prefix == IP.prefix(routing_prefix, bit_length) do
-      raise ArgumentError, "the routing prefix is not a proper ip subnet prefix.  Use IP.Subnet.of/2 instead."
+      when IP.is_ipv4(routing_prefix) and
+             0 <= bit_length and bit_length <= 32 do
+    if routing_prefix != IP.prefix(routing_prefix, bit_length) do
+      raise ArgumentError,
+            "the routing prefix is not a proper ip subnet prefix.  Use IP.Subnet.of/2 instead."
     end
 
     %__MODULE__{
@@ -142,12 +153,13 @@ defmodule IP.Subnet do
       bit_length: bit_length
     }
   end
+
   def new(routing_prefix, bit_length)
-    when IP.is_ipv6(routing_prefix) and
-         0 <= bit_length and bit_length <= 128 do
-
-    unless routing_prefix == IP.prefix(routing_prefix, bit_length) do
-      raise ArgumentError, "the routing prefix is not a proper ip subnet prefix.  Use IP.Subnet.of/2 instead."
+      when IP.is_ipv6(routing_prefix) and
+             0 <= bit_length and bit_length <= 128 do
+    if routing_prefix != IP.prefix(routing_prefix, bit_length) do
+      raise ArgumentError,
+            "the routing prefix is not a proper ip subnet prefix.  Use IP.Subnet.of/2 instead."
     end
 
     %__MODULE__{
@@ -156,30 +168,29 @@ defmodule IP.Subnet do
     }
   end
 
-  @spec of(IP.v4, 0..32) :: t(IP.v4)
-  @spec of(IP.v6, 0..128) :: t(IP.v6)
+  @spec of(IP.v4(), 0..32) :: t(IP.v4())
+  @spec of(IP.v6(), 0..128) :: t(IP.v6())
   @doc """
   creates a corresponding IP subnet associated with a given IP address and
   bit length.
   """
   def of(ip_addr, bit_length)
-    when IP.is_ipv4(ip_addr) and 0 <= bit_length and bit_length <= 32 do
-
+      when IP.is_ipv4(ip_addr) and 0 <= bit_length and bit_length <= 32 do
     %__MODULE__{
       routing_prefix: IP.prefix(ip_addr, bit_length),
       bit_length: bit_length
     }
   end
+
   def of(ip_addr, bit_length)
-    when IP.is_ipv6(ip_addr) and 0 <= bit_length and bit_length <= 128 do
-
+      when IP.is_ipv6(ip_addr) and 0 <= bit_length and bit_length <= 128 do
     %__MODULE__{
       routing_prefix: IP.prefix(ip_addr, bit_length),
       bit_length: bit_length
     }
   end
 
-  @spec to_string(t) :: String.t
+  @spec to_string(t) :: String.t()
   @doc """
   converts an ip subnet to standard CIDR-form, with a slash delimiter.
 
@@ -192,7 +203,7 @@ defmodule IP.Subnet do
     "#{IP.to_string(subnet.routing_prefix)}/#{subnet.bit_length}"
   end
 
-  @spec from_string!(String.t) :: t | no_return
+  @spec from_string!(String.t()) :: t | no_return
   @doc """
   converts a string to an ip subnet.
 
@@ -209,13 +220,17 @@ defmodule IP.Subnet do
   """
   def from_string!(subnet_str) do
     case from_string(subnet_str) do
-      {:ok, subnet} -> subnet
+      {:ok, subnet} ->
+        subnet
+
       {:error, :einval} ->
         raise ArgumentError, "malformed subnet string #{subnet_str}"
+
       {:error, :invalid_subnet} ->
         raise ArgumentError, "invalid subnet value in #{subnet_str}"
+
       {:error, :not_a_binary} ->
-        raise ArgumentError, "invalid input #{inspect subnet_str}"
+        raise ArgumentError, "invalid input #{inspect(subnet_str)}"
     end
   end
 
@@ -236,6 +251,7 @@ defmodule IP.Subnet do
       error -> error
     end
   end
+
   def from_string(_), do: {:error, :not_a_binary}
 
   @doc """
@@ -260,6 +276,7 @@ defmodule IP.Subnet do
       error -> error
     end
   end
+
   def config_from_string(_), do: {:error, :not_a_binary}
 
   @doc """
@@ -280,13 +297,17 @@ defmodule IP.Subnet do
   """
   def config_from_string!(config_str) do
     case config_from_string(config_str) do
-      {:ok, ip, subnet} -> {ip, subnet}
+      {:ok, ip, subnet} ->
+        {ip, subnet}
+
       {:error, :einval} ->
         raise ArgumentError, "malformed subnet string #{config_str}"
+
       {:error, :invalid_subnet} ->
         raise ArgumentError, "invalid subnet value in #{config_str}"
+
       {:error, :not_a_binary} ->
-        raise ArgumentError, "invalid input #{inspect config_str}"
+        raise ArgumentError, "invalid input #{inspect(config_str)}"
     end
   end
 
@@ -294,7 +315,7 @@ defmodule IP.Subnet do
   defp valid_subnet(ip, length) when IP.is_ipv4(ip), do: length in 0..32
   defp valid_subnet(ip, length) when IP.is_ipv6(ip), do: length in 0..128
 
-  @spec broadcast(t(IP.v4)) :: IP.v4
+  @spec broadcast(t(IP.v4())) :: IP.v4()
   @doc """
   finds the broadcast address for a subnet
 
@@ -304,20 +325,21 @@ defmodule IP.Subnet do
   {10, 0, 1, 255}
   """
   def broadcast(subnet = %{routing_prefix: rp, bit_length: bl}) when is_subnet(subnet) do
-    mask = bl
-    |> IP.mask(:v4)
-    |> IP.to_integer
+    mask =
+      bl
+      |> IP.mask(:v4)
+      |> IP.to_integer()
 
     inv_mask = Bitwise.bxor(mask, 0xFFFF_FFFF)
 
     rp
-    |> IP.to_integer
+    |> IP.to_integer()
     |> Bitwise.&&&(mask)
     |> Bitwise.|||(inv_mask)
     |> IP.from_integer(:v4)
   end
 
-  @spec prefix(t) :: IP.addr
+  @spec prefix(t) :: IP.addr()
   @doc """
   retrieves the routing prefix from a subnet.
 
@@ -329,8 +351,8 @@ defmodule IP.Subnet do
   """
   def prefix(%{routing_prefix: rp}), do: rp
 
-  @spec bitlength(t(IP.v4)) :: 0..32
-  @spec bitlength(t(IP.v6)) :: 0..128
+  @spec bitlength(t(IP.v4())) :: 0..32
+  @spec bitlength(t(IP.v6())) :: 0..128
   @doc """
   retrieves the bitlength from a subnet.
 
@@ -342,7 +364,7 @@ defmodule IP.Subnet do
   """
   def bitlength(%{bit_length: bl}), do: bl
 
-  @spec netmask(t) :: IP.addr
+  @spec netmask(t) :: IP.addr()
   @doc """
   computes the netmask for a subnet.
 
@@ -353,24 +375,26 @@ defmodule IP.Subnet do
   ```
   """
   def netmask(%{routing_prefix: rp, bit_length: bl})
-    when IP.is_ipv4(rp), do: IP.mask(bl, :v4)
+      when IP.is_ipv4(rp),
+      do: IP.mask(bl, :v4)
+
   def netmask(%{routing_prefix: rp, bit_length: _bl})
-    when IP.is_ipv6(rp), do: raise "not implemented yet"
+      when IP.is_ipv6(rp),
+      do: raise("not implemented yet")
 
   ###################################################################
   ## PRIVATE API
-  @spec type(t(IP.v4)) :: :v4
-  @spec type(t(IP.v6)) :: :v6
+  @spec type(t(IP.v4())) :: :v4
+  @spec type(t(IP.v6())) :: :v6
   @doc false
   def type(subnet) when is_subnet(subnet), do: IP.type(subnet.routing_prefix)
-
 end
 
 defimpl Inspect, for: IP.Subnet do
   import Inspect.Algebra
 
   def inspect(subnet, _opts) do
-    concat(["~i\"", IP.Subnet.to_string(subnet) , "\""])
+    concat(["~i\"", IP.Subnet.to_string(subnet), "\""])
   end
 end
 
@@ -378,47 +402,55 @@ defimpl Enumerable, for: IP.Subnet do
   alias IP.Subnet
   alias IP.Range
 
-  @spec count(Subnet.t) :: {:ok, non_neg_integer}
+  @spec count(Subnet.t()) :: {:ok, non_neg_integer}
   def count(subnet) do
     import Bitwise
     {:ok, 2 <<< (31 - subnet.bit_length)}
   end
 
-  @spec member?(Subnet.t, IP.addr | Range.t | Subnet.t) :: {:ok, boolean}
+  @spec member?(Subnet.t(), IP.addr() | Range.t() | Subnet.t()) :: {:ok, boolean}
   def member?(subnet, other = %Range{}) do
     {:ok, subnet.routing_prefix <= other.first and other.last <= Subnet.broadcast(subnet)}
   end
+
   def member?(subnet, other = %Subnet{}) do
-    {:ok, subnet.routing_prefix <= other.routing_prefix and Subnet.broadcast(other) <= Subnet.broadcast(subnet)}
-  end
-  def member?(subnet, this_ip) do
-    {:ok, subnet.routing_prefix <= this_ip and
-          this_ip <= Subnet.broadcast(subnet)}
+    {:ok,
+     subnet.routing_prefix <= other.routing_prefix and
+       Subnet.broadcast(other) <= Subnet.broadcast(subnet)}
   end
 
-  @spec reduce(Subnet.t, Enumerable.acc, fun) :: Enumerable.result
+  def member?(subnet, this_ip) do
+    {:ok,
+     subnet.routing_prefix <= this_ip and
+       this_ip <= Subnet.broadcast(subnet)}
+  end
+
+  @spec reduce(Subnet.t(), Enumerable.acc(), fun) :: Enumerable.result()
   def reduce(_subnet, {:halt, acc}, _), do: {:halted, acc}
   def reduce(subnet, {:suspend, acc}, fun), do: {:suspended, acc, &reduce(subnet, &1, fun)}
+
   def reduce(subnet = %{__enum__: nil}, {:cont, acc}, fun) do
     placeholder = {IP.next(subnet.routing_prefix), Subnet.broadcast(subnet)}
-    reduce(%{subnet | __enum__: placeholder},
-      fun.(subnet.routing_prefix, acc), fun)
+    reduce(%{subnet | __enum__: placeholder}, fun.(subnet.routing_prefix, acc), fun)
   end
+
   def reduce(subnet = %{__enum__: {this, last}}, {:cont, acc}, fun) when this <= last do
     placeholder = {IP.next(this), last}
     reduce(%{subnet | __enum__: placeholder}, fun.(this, acc), fun)
   end
+
   def reduce(_, {:cont, acc}, _fun), do: {:done, acc}
 
-  @spec slice(Subnet.t) :: {:ok, non_neg_integer, Enumerable.slicing_fun}
+  @spec slice(Subnet.t()) :: {:ok, non_neg_integer, Enumerable.slicing_fun()}
   def slice(subnet) do
     type = Subnet.type(subnet)
     {:ok, count} = count(subnet)
 
-    {:ok, count, fn start, length ->
-      first_int = IP.to_integer(subnet.routing_prefix) + start
-      last_int = first_int + length - 1
-      Enum.map(first_int..last_int, &IP.from_integer(&1, type))
-    end}
+    {:ok, count,
+     fn start, length ->
+       first_int = IP.to_integer(subnet.routing_prefix) + start
+       last_int = first_int + length - 1
+       Enum.map(first_int..last_int, &IP.from_integer(&1, type))
+     end}
   end
 end

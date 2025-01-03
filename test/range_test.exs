@@ -8,9 +8,9 @@ defmodule IPTest.IPRangeTest do
   describe "new/2" do
     test "the basics work" do
       assert %Range{
-        first: ~i"10.0.0.0",
-        last: ~i"10.0.0.1"
-      } == Range.new(~i"10.0.0.0", ~i"10.0.0.1")
+               first: ~i"10.0.0.0",
+               last: ~i"10.0.0.1"
+             } == Range.new(~i"10.0.0.0", ~i"10.0.0.1")
     end
 
     test "function clause errors if the values aren't ip addresses" do
@@ -32,9 +32,9 @@ defmodule IPTest.IPRangeTest do
   describe "from_string!/1" do
     test "correctly figures out an ipv4 subnet" do
       assert %Range{
-        first: ~i"10.0.0.0",
-        last: ~i"10.0.0.1"
-      } == Range.from_string!("10.0.0.0..10.0.0.1")
+               first: ~i"10.0.0.0",
+               last: ~i"10.0.0.1"
+             } == Range.from_string!("10.0.0.0..10.0.0.1")
     end
 
     test "raises an argument error if something strange is passed" do
@@ -46,10 +46,11 @@ defmodule IPTest.IPRangeTest do
 
   describe "inspecting the Range struct" do
     test "works as expected" do
-      assert ~s(~i"10.0.0.0..10.0.0.1") == inspect(%Range{
-        first: {10, 0, 0, 0},
-        last: {10, 0, 0, 1}
-      })
+      assert ~s(~i"10.0.0.0..10.0.0.1") ==
+               inspect(%Range{
+                 first: {10, 0, 0, 0},
+                 last: {10, 0, 0, 1}
+               })
     end
   end
 
@@ -70,21 +71,23 @@ defmodule IPTest.IPRangeTest do
 
     test "fails if it's not a proper struct" do
       refute Range.is_range(:foo)
+
       refute Range.is_range(%{
-        first: ~i"10.0.0.0",
-        last: ~i"10.0.0.3"
-      })
+               first: ~i"10.0.0.0",
+               last: ~i"10.0.0.3"
+             })
     end
 
     test "fails if range has bounding values" do
       refute Range.is_range(%Range{
-        first: ~i"10.0.0.0",
-        last: ~i"::1"
-      })
+               first: ~i"10.0.0.0",
+               last: ~i"::1"
+             })
+
       refute Range.is_range(%Range{
-        first: ~i"10.0.0.3",
-        last: ~i"10.0.0.1"
-      })
+               first: ~i"10.0.0.3",
+               last: ~i"10.0.0.1"
+             })
     end
   end
 end

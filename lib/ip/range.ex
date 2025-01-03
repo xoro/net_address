@@ -1,5 +1,4 @@
 defmodule IP.Range do
-
   @moduledoc """
   Convenience type which encapsulates the idea of a contiguous range
   of IP addresses.
@@ -53,16 +52,16 @@ defmodule IP.Range do
 
   @typedoc "ip ranges typed to either ipv4 or ipv6"
   @type t(ip_type) :: %__MODULE__{
-    first: ip_type,
-    last: ip_type
-  }
+          first: ip_type,
+          last: ip_type
+        }
 
   @typedoc "generic ip range"
-  @type t() :: t(IP.v4) | t(IP.v6)
+  @type t() :: t(IP.v4()) | t(IP.v6())
 
   require IP
 
-  @spec is_range(any) :: Macro.t
+  @spec is_range(any) :: Macro.t()
   @doc """
   true if the argument is an proper ip range
 
@@ -80,13 +79,14 @@ defmodule IP.Range do
   false
   ```
   """
-  defguard is_range(range) when is_struct(range) and
-    :erlang.map_get(:__struct__, range) == __MODULE__ and
-    ((IP.is_ipv4(:erlang.map_get(:first, range)) and
-      IP.is_ipv4(:erlang.map_get(:last, range))) or
-     (IP.is_ipv6(:erlang.map_get(:first, range)) and
-     IP.is_ipv6(:erlang.map_get(:last, range)))) and
-    (:erlang.map_get(:first, range) <= :erlang.map_get(:last, range))
+  defguard is_range(range)
+           when is_struct(range) and
+                  :erlang.map_get(:__struct__, range) == __MODULE__ and
+                  ((IP.is_ipv4(:erlang.map_get(:first, range)) and
+                      IP.is_ipv4(:erlang.map_get(:last, range))) or
+                     (IP.is_ipv6(:erlang.map_get(:first, range)) and
+                        IP.is_ipv6(:erlang.map_get(:last, range)))) and
+                  :erlang.map_get(:first, range) <= :erlang.map_get(:last, range)
 
   @doc """
   true if the `ip` parameter is inside the range.  `ip` must be a
@@ -105,11 +105,11 @@ defmodule IP.Range do
   false
   ```
   """
-  defguard is_in(range, ip) when
-    :erlang.map_get(:first, range) <= ip and
-    ip <= :erlang.map_get(:last, range)
+  defguard is_in(range, ip)
+           when :erlang.map_get(:first, range) <= ip and
+                  ip <= :erlang.map_get(:last, range)
 
-  @spec new(IP.addr, IP.addr) :: t
+  @spec new(IP.addr(), IP.addr()) :: t
   @doc """
   Creates a new IP range, with validation.
 
@@ -123,16 +123,18 @@ defmodule IP.Range do
   }
   ```
   """
-  def new(first, last) when (IP.is_ipv4(first) and IP.is_ipv4(last)) or
-                            (IP.is_ipv6(first) and IP.is_ipv6(last)) do
-    unless first <= last do
-      raise ArgumentError, "ip range must be ascending, given #{inspect first} and #{inspect last}"
+  def new(first, last)
+      when (IP.is_ipv4(first) and IP.is_ipv4(last)) or
+             (IP.is_ipv6(first) and IP.is_ipv6(last)) do
+    if not (first <= last) do
+      raise ArgumentError,
+            "ip range must be ascending, given #{inspect(first)} and #{inspect(last)}"
     end
 
     %__MODULE__{first: first, last: last}
   end
 
-  @spec from_string!(String.t) :: t
+  @spec from_string!(String.t()) :: t
   @doc """
   converts a string to an ip range.
 
@@ -152,13 +154,16 @@ defmodule IP.Range do
   """
   def from_string!(range_str) when is_binary(range_str) do
     case from_string(range_str) do
-      {:ok, range} -> range
+      {:ok, range} ->
+        range
+
       _ ->
         raise ArgumentError, "invalid ip range string: \"#{range_str}\""
     end
   end
+
   def from_string!(any) do
-    raise ArgumentError, "invalid parameter #{inspect any}"
+    raise ArgumentError, "invalid parameter #{inspect(any)}"
   end
 
   @spec from_string(binary) :: {:error, :einval} | {:ok, t}
@@ -172,15 +177,18 @@ defmodule IP.Range do
     |> case do
       [{:ok, first}, {:ok, last}] when IP.is_ipv4(first) and IP.is_ipv4(last) ->
         {:ok, new(first, last)}
+
       [{:ok, first}, {:ok, last}] when IP.is_ipv6(first) and IP.is_ipv6(last) ->
         {:ok, new(first, last)}
+
       _ ->
         {:error, :einval}
     end
   end
+
   def from_string(_), do: {:error, :einval}
 
-  @spec to_string(t) :: String.t
+  @spec to_string(t) :: String.t()
   @doc """
   converts a ip range to a string with delimiter ".."
 
@@ -192,7 +200,7 @@ defmodule IP.Range do
   ```
   """
   def to_string(range) when is_range(range) do
-    "#{IP.to_string range.first}..#{IP.to_string range.last}"
+    "#{IP.to_string(range.first)}..#{IP.to_string(range.last)}"
   end
 
   @doc false
@@ -203,7 +211,7 @@ defimpl Inspect, for: IP.Range do
   import Inspect.Algebra
 
   def inspect(range, _opts) do
-    concat(["~i\"", IP.Range.to_string(range) , "\""])
+    concat(["~i\"", IP.Range.to_string(range), "\""])
   end
 end
 
@@ -211,39 +219,44 @@ defimpl Enumerable, for: IP.Range do
   alias IP.Range
   alias IP.Subnet
 
-  @spec count(Range.t) :: {:ok, non_neg_integer}
+  @spec count(Range.t()) :: {:ok, non_neg_integer}
   def count(range) do
     {:ok, IP.to_integer(range.last) - IP.to_integer(range.first) + 1}
   end
 
-  @spec member?(Range.t, IP.addr | Range.t | Subnet.t) :: {:ok, boolean}
+  @spec member?(Range.t(), IP.addr() | Range.t() | Subnet.t()) :: {:ok, boolean}
   def member?(range, other = %Range{}) do
     {:ok, range.first <= other.first and other.last <= range.last}
   end
+
   def member?(range, other = %Subnet{}) do
     {:ok, range.first <= other.routing_prefix and Subnet.broadcast(other) <= range.last}
   end
+
   def member?(range, this_ip) do
     {:ok, range.first <= this_ip and this_ip <= range.last}
   end
 
-  @spec reduce(Range.t, Enumerable.acc, fun) :: Enumerable.result
+  @spec reduce(Range.t(), Enumerable.acc(), fun) :: Enumerable.result()
   def reduce(_subnet, {:halt, acc}, _), do: {:halted, acc}
   def reduce(subnet, {:suspend, acc}, fun), do: {:suspended, acc, &reduce(subnet, &1, fun)}
+
   def reduce(subnet = %{first: first, last: last}, {:cont, acc}, fun) when first <= last do
     reduce(%{subnet | first: IP.next(first)}, fun.(first, acc), fun)
   end
+
   def reduce(_subnet, {:cont, acc}, _fun), do: {:done, acc}
 
-  @spec slice(Range.t) :: {:ok, non_neg_integer, Enumerable.slicing_fun}
+  @spec slice(Range.t()) :: {:ok, non_neg_integer, Enumerable.slicing_fun()}
   def slice(range) do
     type = Range.type(range)
     {:ok, count} = count(range)
 
-    {:ok, count, fn start, length ->
-      first_int = IP.to_integer(range.first) + start
-      last_int = first_int + length - 1
-      Enum.map(first_int..last_int, &IP.from_integer(&1, type))
-    end}
+    {:ok, count,
+     fn start, length ->
+       first_int = IP.to_integer(range.first) + start
+       last_int = first_int + length - 1
+       Enum.map(first_int..last_int, &IP.from_integer(&1, type))
+     end}
   end
 end
